@@ -1,0 +1,100 @@
+# Compilation of little bash gems collected from unix.stackexchange.com[1]
+# [1]http://unix.stackexchange.com/questions/6/what-are-your-favorite-command-line-features-or-tricks
+
+alias s='sudo'
+
+function mkcd () {
+	mkdir -p "$@" && cd "$@";
+}
+
+# Usage .. [n]
+function .. (){
+    local arg=${1:-1};
+    local dir=""
+    while [ $arg -gt 0 ]; do
+        dir="../$dir"
+        arg=$(($arg - 1));
+    done
+    cd $dir #>&/dev/null
+}
+
+function scr {
+	if screen -ls | grep -q Main; then
+  	# reattach to Main: 
+  	screen -xr Main
+  else
+		# name session "Main":
+    screen -S Main
+  fi
+}
+
+function total () {
+        if [ x$1 = x ]; then set `echo 1`; fi
+        awk "{total += \$$1} END {print total}"
+}
+
+
+   
+# show current git branch
+
+export GIT_PS1_SHOWDIRTYSTATE=true
+PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1 "#%s")\$ '
+
+####
+
+
+# show the most recently changed file
+latest()
+{
+    local count=1               # how many files to print
+    local promptlines=5         # how many lines to leave for the prompt
+                                # when printing a screenful with -s
+    local usage="Usage: latest [-n <number>] [-s] [--] [pattern]"
+    while test $# -gt 0
+    do
+        case $1 in
+        # -- = stop processing options
+        --)
+            shift
+            break
+            ;;
+        # -n <number> = <number> files
+        -n)
+            if test -n "$2"
+            then
+                count=$2
+                shift 2
+            else
+                echo "$usage" 1>&2
+                return 1
+            fi
+            ;;
+        # -s = one screenful
+        -s)
+            count=$((LINES - promptlines))
+            shift
+            ;;
+        # -<number> = <number> files
+        -[0-9]*)
+            count=${1#-}
+            shift
+            ;;
+        # anything else starting with a minus is a usage error
+        -*)
+            echo "$usage" 1>&2
+            return 1
+            ;;
+        *)
+            break
+            ;;
+        esac
+    done
+
+    if test $# -ne 0
+    then
+        /bin/ls -t -1 -d "$@" | head -n $count
+    else
+        /bin/ls -t -1 -d * | head -n $count
+    fi
+}
+
